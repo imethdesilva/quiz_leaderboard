@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrabble Leaderboard</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --background: #f8fafc;
+            --text: #1e293b;
+            --danger: #ef4444;
+            --danger-dark: #dc2626;
+            --success: #22c55e;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-controls {
+            display: none;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-dark);
+        }
+
+        .leaderboard {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        tr:hover {
+            background: #f1f5f9;
+        }
+
+        .rank {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+
+        .modal-title {
+            margin: 0 0 20px 0;
+            color: var(--text);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .auth-section {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .auth-section input {
+            max-width: 200px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 0.875rem;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            background: var(--success);
+            color: white;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .admin-controls {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .auth-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .auth-section input {
+                max-width: none;
+            }
+
+            td, th {
+                padding: 8px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="auth-section">
+            <input type="password" id="adminPassword" placeholder="Enter admin password">
+            <button class="btn" onclick="checkPassword()">Login as Admin</button>
+        </div>
+
+        <div class="header">
+            <h1>🎲 Scrabble Masters Leaderboard</h1>
+            <div class="admin-controls">
+                <button class="btn" onclick="addPlayer()">➕ Add Player</button>
+                <button class="btn" onclick="updateLeaderboard()">🔄 Update Leaderboard</button>
+                <button class="btn" onclick="resetData()">🔄 Reset Data</button>
+            </div>
+        </div>
+
+        <div class="leaderboard">
+            <table id="leaderboardTable">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Codename</th>
+                        <th>Total Score</th>
+                        <th>Quiz 01</th>
+                        <th>Quiz 02</th>
+                        <th>Quiz 03</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="playerModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" class="modal-title">Player Details</h2>
+            <div class="form-group">
+                <label>Codename:</label>
+                <input type="text" id="playerCodename" placeholder="Enter player codename">
+            </div>
+            <div class="form-group">
+                <label>Quiz 01 Score:</label>
+                <input type="number" id="quiz1Score" placeholder="Enter score" min="0" max="100">
+            </div>
+            <div class="form-group">
+                <label>Quiz 02 Score:</label>
+                <input type="number" id="quiz2Score" placeholder="Enter score" min="0" max="100">
+            </div>
+            <div class="form-group">
+                <label>Quiz 03 Score:</label>
+                <input type="number" id="quiz3Score" placeholder="Enter score" min="0" max="100">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-danger" onclick="closeModal()">Cancel</button>
+                <button class="btn" id="saveButton" onclick="savePlayer()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        const ADMIN_PASSWORD = 'admin123'; // Change this to your desired password
+        let isAdmin = false;
+        let editingIndex = -1;
+        let isEditing = false;
+
+        // Initialize players from localStorage or use default data
+        let players = JSON.parse(localStorage.getItem('scrabblePlayers')) || [
+            { codename: 'WordWizard', quiz1: 95, quiz2: 88, quiz3: 92 },
+            { codename: 'LetterNinja', quiz1: 87, quiz2: 91, quiz3: 89 },
+            { codename: 'VocabViper', quiz1: 92, quiz2: 85, quiz3: 90 }
+        ];
+
+        // Save players data to localStorage
+        function savePlayers() {
+            localStorage.setItem('scrabblePlayers', JSON.stringify(players));
+            showNotification('Changes saved successfully!');
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block';
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function checkPassword() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                isAdmin = true;
+                document.querySelector('.admin-controls').style.display = 'flex';
+                document.querySelector('.auth-section').style.display = 'none';
+                makeTableEditable();
+                showNotification('Logged in as admin');
+            } else {
+                alert('Incorrect password!');
+            }
+        }
+
+        function calculateTotal(player) {
+            return player.quiz1 + player.quiz2 + player.quiz3;
+        }
+
+        function updateLeaderboard() {
+            players.sort((a, b) => calculateTotal(b) - calculateTotal(a));
+            renderLeaderboard();
+            savePlayers();
+        }
+
+        function renderLeaderboard() {
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = '';
+            
+            players.forEach((player, index) => {
+                const total = calculateTotal(player);
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td class="rank">#${index + 1}</td>
+                    <td>${player.codename}</td>
+                    <td>${total}</td>
+                    <td>${player.quiz1}</td>
+                    <td>${player.quiz2}</td>
+                    <td>${player.quiz3}</td>
+                    <td>
+                        ${isAdmin ? `
+                            <div class="action-buttons">
+                                <button class="btn btn-small" onclick="editPlayer(${index})"✏️ Update</button>
+                                <button class="btn btn-small btn-danger" onclick="deletePlayer(${index})">🗑️ Delete</button>
+                            </div>
+                        ` : ''}
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function makeTableEditable() {
+            renderLeaderboard();
+        }
+
+        function resetData() {
+            if (confirm('Are you sure you want to reset all data? This cannot be undone!')) {
+                players = [
+                    { codename: 'WordWizard', quiz1: 95, quiz2: 88, quiz3: 92 },
+                    { codename: 'LetterNinja', quiz1: 87, quiz2: 91, quiz3: 89 },
+                    { codename: 'VocabViper', quiz1: 92, quiz2: 85, quiz3: 90 }
+                ];
+                updateLeaderboard();
+                showNotification('Data has been reset to defaults');
+            }
+        }
+
+        function addPlayer() {
+            isEditing = false;
+            editingIndex = -1;
+            document.getElementById('modalTitle').textContent = 'Add New Player';
+            document.getElementById('saveButton').textContent = 'Add Player';
+            document.getElementById('playerCodename').value = '';
+            document.getElementById('quiz1Score').value = '';
+            document.getElementById('quiz2Score').value = '';
+            document.getElementById('quiz3Score').value = '';
+            document.getElementById('playerModal').style.display = 'block';
+        }
+
+        function editPlayer(index) {
+            if (!isAdmin) return;
+            
+            isEditing = true;
+            editingIndex = index;
+            const player = players[index];
+            
+            document.getElementById('modalTitle').textContent = 'Update Player';
+            document.getElementById('saveButton').textContent = 'Update Player';
+            document.getElementById('playerCodename').value = player.codename;
+            document.getElementById('quiz1Score').value = player.quiz1;
+            document.getElementById('quiz2Score').value = player.quiz2;
+            document.getElementById('quiz3Score').value = player.quiz3;
+            
+            document.getElementById('playerModal').style.display = 'block';
+        }
+
+        function deletePlayer(index) {
+            if (!isAdmin) return;
+            
+            if (confirm('Are you sure you want to delete this player?')) {
+                players.splice(index, 1);
+                updateLeaderboard();
+                showNotification('Player deleted successfully');
+            }
+        }
+
+        function savePlayer() {
+            const codename = document.getElementById('playerCodename').value;
+            const quiz1 = Number(document.getElementById('quiz1Score').value);
+            const quiz2 = Number(document.getElementById('quiz2Score').value);
+            const quiz3 = Number(document.getElementById('quiz3Score').value);
+
+            if (!codename || isNaN(quiz1) || isNaN(quiz2) || isNaN(quiz3)) {
+                alert('Please fill in all fields with valid values');
+                return;
+            }
+
+            if (quiz1 < 0 || quiz1 > 100 || quiz2 < 0 || quiz2 > 100 || quiz3 < 0 || quiz3 > 100) {
+                alert('Quiz scores must be between 0 and 100');
+                return;
+            }
+
+        const playerData = { codename, quiz1, quiz2, quiz3 };
+
+            if (isEditing) {
+                players[editingIndex] = playerData;
+                showNotification('Player updated successfully');
+            } else {
+                players.push(playerData);
+                showNotification('New player added successfully');
+            }
+
+            closeModal();
+            updateLeaderboard();
+        }
+
+        function closeModal() {
+            document.getElementById('playerModal').style.display = 'none';
+            isEditing = false;
+            editingIndex = -1;
+        }
+
+        // Add keyboard support for the modal
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+            if (event.key === 'Enter' && document.getElementById('playerModal').style.display === 'block') {
+                savePlayer();
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('playerModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Initialize tooltips
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(button => {
+            button.title = button.textContent.trim();
+        });
+
+        // Handle form submission in auth section
+        document.getElementById('adminPassword').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        // Initial render
+        renderLeaderboard();
+    </script>
+</body>
+</html>
